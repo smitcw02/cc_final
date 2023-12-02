@@ -1,0 +1,127 @@
+---
+title: "Cloud Computing Final (Exploratory Analysis)"
+author: "Connor Smith"
+date: "2023-12-02"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r data}
+day.data = read.csv('day.csv', header=TRUE)
+library(ggplot2)
+library(MASS)
+attach(day.data)
+```
+
+## Normality Tests
+
+season, yr, mnth, holiday, weekday, workingday, and weathersit are all categorical variables (encoded), so they should not be transformed.
+
+temp, atemp, hum, and windspeed should all be assessed.
+
+```{r normality check for windspeed}
+# Check normality
+qqnorm(day.data$windspeed)
+qqline(day.data$windspeed)
+
+# also trying the shapiro normality test
+shapiro.test(day.data$windspeed)
+
+# Transformation check
+boxcox_result <- boxcox(day.data$windspeed ~ 1)
+# optimal lambda
+boxcox_result$x[which.max(boxcox_result$y)]
+
+# transformation
+day.data$tf_windspeed <- (day.data$windspeed^0.424 - 1) / 0.424
+
+
+# checking transformed normality
+qqnorm(day.data$tf_windspeed)
+qqline(day.data$tf_windspeed)
+shapiro.test(day.data$tf_windspeed)
+```
+
+
+```{r normality check for hum}
+# Check normality
+qqnorm(day.data$hum)
+qqline(day.data$hum)
+
+# also trying the shapiro normality test
+shapiro.test(day.data$hum)
+
+# Transformation check
+boxcox_result <- boxcox(day.data$hum ~ 1)
+# optimal lambda
+boxcox_result$x[which.max(boxcox_result$y)]
+```
+
+
+```{r model without interaction}
+no_interaction.glr <- lm(casual ~ tf_windspeed + holiday + weekday + workingday + weathersit + hum + temp, data=day.data)
+summary(no_interaction.glr)
+```
+
+
+```{r individual correlations}
+
+cor(day.data$casual, day.data$tf_windspeed)
+no_interaction.glr <- lm(casual ~ tf_windspeed, data=day.data)
+summary(no_interaction.glr)
+
+cor(day.data$casual, day.data$holiday)
+no_interaction.glr <- lm(casual ~ holiday, data=day.data)
+summary(no_interaction.glr)
+
+cor(day.data$casual, day.data$weekday)
+no_interaction.glr <- lm(casual ~ weekday, data=day.data)
+summary(no_interaction.glr)
+
+cor(day.data$casual, day.data$workingday)
+no_interaction.glr <- lm(casual ~ workingday, data=day.data)
+summary(no_interaction.glr)
+
+cor(day.data$casual, day.data$weathersit)
+no_interaction.glr <- lm(casual ~ weathersit, data=day.data)
+summary(no_interaction.glr)
+
+cor(day.data$casual, day.data$hum)
+no_interaction.glr <- lm(casual ~ hum, data=day.data)
+summary(no_interaction.glr)
+
+cor(day.data$casual, day.data$temp)
+no_interaction.glr <- lm(casual ~ temp, data=day.data)
+summary(no_interaction.glr)
+```
+
+
+```{r model without interaction}
+no_interaction.glr <- lm(casual ~ tf_windspeed + workingday + weathersit + temp, data=day.data)
+summary(no_interaction.glr)
+```
+
+```{r boxplots for day of the week}
+# Create a boxplot
+boxplot(casual ~ weekday, data = day.data,
+        main = "Boxplot of Casual vs. Weekday",
+        xlab = "Weekday",
+        ylab = "Casual",
+        col = "blue")
+```
+It looks like there is a dependency here, but the regression may not pick up on it since the highest and lowest number correlates with the increased rentals. We could recode these so that 0 and 6 (weekend days) = 0 and 1-5 (weekdays) = 1, however that seems to be the point of the 'workingday' column:
+
+
+```{r boxplots for working day}
+# Create a boxplot
+boxplot(casual ~ workingday, data = day.data,
+        main = "Boxplot of Casual vs. Workingday",
+        xlab = "Workingday",
+        ylab = "Casual",
+        col = "blue")
+```
+
+This is the exact same data, just recoded. This would be better in our regression and weekday might be best left out.

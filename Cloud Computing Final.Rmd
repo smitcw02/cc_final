@@ -1,0 +1,55 @@
+---
+title: "Cloud Computing Final"
+author: "Grant Peretz, Connor Smith, Billy Powers"
+date: "2023-12-01"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+```{r}
+# Read data
+
+day <- read.csv('https://code.datasciencedojo.com/datasciencedojo/datasets/raw/master/Bike%20Sharing/day.csv')
+hour <- read.csv('https://code.datasciencedojo.com/datasciencedojo/datasets/raw/master/Bike%20Sharing/hour.csv')
+```
+
+```{r}
+library(dplyr)
+library(corrr)
+
+hour.cor <- select(hour,-c('instant', 'dteday', 'registered', 'cnt'))
+
+hour.cor %>% 
+  correlate() %>% 
+  focus(casual)
+```
+
+No pairwise Pearson correlation coefficient above 0.5.
+
+```{r}
+library(FactoMineR)
+library(factoextra)
+
+# Normalize data
+hour.norm <- scale(hour.cor)
+head(hour.norm)
+
+norm.corr <- cor(hour.norm)
+
+# Principal Component Analysis
+hour.pca <- princomp(norm.corr)
+summary(hour.pca)
+```
+The cumulative proportion of the first 8 variables explains 97% of the variance.
+
+```{r}
+hour.pca$loadings[,1:8]
+fviz_pca_var(hour.pca, col.var = 'cos2',
+            gradient.cols = c('black', 'red', 'blue'),
+            repel = TRUE)
+```
+
+The variables `atemp` and `temp` are closely correlated, as are `mnth` and `season`. The day of the week, year, and whether the day is a holiday had little input into the first eight principal components.
