@@ -1,0 +1,47 @@
+---
+title: "Cloud Computing Final Prediction"
+author: "Billy Power, Grant Peretz, Connor Smith"
+date: "2023-12-04"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Loading in the dataset and taking a look at the correlation of a few datapoints that seem like they may have high correlation
+```{r}
+library(caret)
+library(randomForest)
+bike_data <- read.csv("C:\\Users\\Billy\\Documents\\hour.csv")
+
+correlation_humidity <- cor.test(bike_data$cnt, bike_data$hum)
+correlation_humidity
+
+correlation_weather <- cor.test(bike_data$cnt, bike_data$weathersit)
+correlation_weather
+
+correlation_temperature <- cor.test(bike_data$cnt, bike_data$temp)
+correlation_temperature
+
+correlation_work_day <- cor.test(bike_data$cnt, bike_data$workingday)
+correlation_work_day
+```
+
+```{r}
+set.seed(123)
+train_index <- createDataPartition(bike_data$cnt, p = 0.8, list = FALSE)
+train_data <- bike_data[train_index, ]
+test_data <- bike_data[-train_index, ]
+
+model <- randomForest(cnt ~ ., data = train_data)
+predictions <- predict(model, newdata = test_data)
+
+mse <- mean((predictions - test_data$cnt)^2)
+print(paste("Mean Squared Error:", mse))
+rmse <- sqrt(mse)
+sd_cnt <- sd(test_data$cnt)
+
+print(paste("Root Mean Squared Error:", rmse))
+print(paste("Standard Deviation of cnt:", sd_cnt))
+```
